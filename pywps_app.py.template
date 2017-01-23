@@ -1,0 +1,9 @@
+from pywps import Service
+
+from processes.contour_lines_generation import ContourLinesGenerator
+
+processes = [
+    ContourLinesGenerator("/path/to/GRASSDATA/SRTM")
+]
+
+application = Service(processes, ['pywps.cfg'])
