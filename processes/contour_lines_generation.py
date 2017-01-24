@@ -68,7 +68,7 @@ class ContourLinesGenerator(Process):
               w=request.inputs['bboxin'][0].data[0]
         )
         Module('r.contour',
-              input='elevation_test',
+              input='elevation',
               output='contour_lines',
               step=request.inputs['interval'][0].data
         )

@@ -25,8 +25,8 @@ contact_role=pointOfContact
 [server]
 maxsingleinputsize=1mb
 maxrequestsize=3mb
-url=http://176.9.38.120/wps
-outputurl=http://176.9.38.120/wps/outputs
+url=http://176.9.38.120/wps/
+outputurl=http://176.9.38.120/wps/outputs/
 outputpath=outputs
 workdir=workdir
 maxprocesses=0
