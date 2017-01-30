@@ -4,14 +4,14 @@ This is a app written using PyWPS 4.
 
 ## Installation
 
-1. Install pywps 4.x  
-2. Fill all *.templates files and remove .templates extension  
+1. Install pywps 4.x
+2. Install Flask
+3. Fill all *.templates files and remove .templates extension
+4. Create the directories specified in the configuration file: logs, outputs, workdir
 
 ## GRASS requirements
 
-1. GRASS PERMANENT mapset which set in py_wps_app.py must have whole world SRTM raster with name "elevation"  
+1. GRASS PERMANENT mapset which set in app.py must have whole world SRTM raster with name "elevation"  
 
 ## Running  
-
-1. With uwsgi:  
-```uwsgi --ini uwsgi.cfg```
+```python app.py```

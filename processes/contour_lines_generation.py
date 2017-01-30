@@ -36,8 +36,7 @@ class ContourLinesGenerator(Process):
     def __init__(self, grass_lacation):
         inputs = [
                   BoundingBoxInput('bboxin', 'Box in', ['epsg:4326']),
-                  LiteralInput('interval', 'Interval', data_type='float',
-                      allowed_values=(0, 1, 10, (10, 10, 100), (100, 100, 1000)))
+                  LiteralInput('interval', 'Interval', data_type='positiveInteger')
                  ]
         outputs = [
                  ComplexOutput('contour_lines', 'Contour Lines',
