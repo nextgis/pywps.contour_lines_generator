@@ -33,7 +33,7 @@ import pywps.configuration as config
 
 
 class ContourLinesGenerator(Process):
-    def __init__(self, grass_lacation):
+    def __init__(self, grass_location):
         inputs = [
                   BoundingBoxInput('bboxin', 'Box in', ['epsg:4326']),
                   LiteralInput('interval', 'Interval', data_type='positiveInteger')
@@ -54,7 +54,7 @@ class ContourLinesGenerator(Process):
             outputs=outputs,
             store_supported=True,
             status_supported=True,
-            grass_location=grass_lacation
+            grass_location=grass_location
         )
 
     def _handler(self, request, response):

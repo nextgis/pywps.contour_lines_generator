@@ -1,11 +1,13 @@
 import os
 import flask
+from flask import request
 from pywps import Service
 
+import configuration
 from processes.contour_lines_generation import ContourLinesGenerator
 
 processes = [
-    ContourLinesGenerator("/path/to/GRASSDATA/SRTM")
+    ContourLinesGenerator(configuration.grass_db_location)
 ]
 service = Service(processes, ['pywps.cfg'])
 
@@ -47,7 +49,6 @@ def staticfile(filename):
 def contour_lines_book():
     import requests
     import xml.etree.ElementTree as ET
-    print "request.args: ", request.args
     minx = request.args.get("minx", "")
     maxx = request.args.get("maxx", "")
     miny = request.args.get("miny", "")
@@ -84,7 +85,7 @@ def contour_lines_book():
     </wps:ResponseForm>
 </wps:Execute>
 """ % (minx, miny, maxx, maxy, interval)
-    
+
     headers = {'Content-Type': 'application/xml'}
     resp = requests.post('http://0.0.0.0:5001/wps/', data=xml, headers=headers)
 
@@ -103,9 +104,19 @@ def contour_lines_book():
         try:
             root = ET.fromstring(resp.text)
             statusLocation = root.attrib.get("statusLocation")
-            return statusLocation.split('/')[-1].split('.')[0]
+            # return statusLocation.split('/')[-1].split('.')[0]
+            # return statusLocation
+            response = app.response_class(
+                response='{"type":"success", "data":"%s"}' % statusLocation.split('/')[-1].split('.')[0],
+                mimetype="application/json"
+            )
+            return response
         except Exception as e:
-            return unicode(e)
+            response = app.response_class(
+                response='{"type":"error", "data":"%s"}' % unicode(e),
+                mimetype="application/json"
+            )
+            return response
 
     elif resp.status_code == 400:
 # <?xml version="1.0" encoding="UTF-8"?>
@@ -120,10 +131,18 @@ def contour_lines_book():
         root = ET.fromstring(resp.text)
         exception_text_element = root.find("ows:Exception/ows:ExceptionText", ns)
 
-        return exception_text_element.text
+        response = app.response_class(
+            response='{"type":"error", "data":"%s"}' % exception_text_element.text,
+            mimetype="application/json"
+        )
+        return response
 
     else:
-        flask.abort(500)
+        response = app.response_class(
+            response='{"type":"error", "data":"Internal server error"}',
+            mimetype="application/json"
+        )
+        return response
 
 @app.route("/wps/simple/contour_lines/check")
 def contour_lines_check():
@@ -132,9 +151,7 @@ def contour_lines_check():
 
     uuid = request.args.get("uuid", "")
 
-    resp = requests.get('http://176.9.38.120/wps/outputs/%s.xml' % uuid)
-
-    print resp.text
+    resp = requests.get('http://0.0.0.0:5001/wps/outputs/%s.xml' % uuid)
 
     ns = {
         "wps":"http://www.opengis.net/wps/1.0.0",
@@ -157,7 +174,11 @@ def contour_lines_check():
 #     <wps:ProcessAccepted>PyWPS Process contour_lines_generator accepted</wps:ProcessAccepted>
 #   </wps:Status>
 # </wps:ExecuteResponse>
-                return "In process"
+                response = app.response_class(
+                    response='{"type":"warning", "data":"Task in process"}',
+                    mimetype="application/json"
+                )
+                return response
 
             process_succeeded_tag = root.find("wps:Status/wps:ProcessSucceeded", ns)
             if process_succeeded_tag is not None:
@@ -180,11 +201,23 @@ def contour_lines_check():
 # </wps:ExecuteResponse>
                 output_ref = root.find("wps:ProcessOutputs/wps:Output/wps:Reference", ns)
                 rez_ref = output_ref.attrib.get("{%s}href" % ns.get("xlink"))
-                return rez_ref
+                response = app.response_class(
+                    response='{"type":"success", "data":"%s"}' % rez_ref,
+                    mimetype="application/json"
+                )
+                return response
         except Exception as e:
-            return unicode(e)
+            response = app.response_class(
+                response='{"type":"error", "data":"%s"}' % unicode(e),
+                mimetype="application/json"
+            )
+            return response
 
-        return "Unknown state!"
+        response = app.response_class(
+            response='{"type":"error", "data":"Unknown task id"}',
+            mimetype="application/json"
+        )
+        return response
 
     elif resp.status_code == 400:
         ns = {
@@ -193,10 +226,25 @@ def contour_lines_check():
         root = ET.fromstring(resp.text)
         exception_text_element = root.find("ows:Exception/ows:ExceptionText", ns)
 
-        return exception_text_element.text
+        response = app.response_class(
+            response='{"type":"error", "data":"%s"}' % exception_text_element,
+            mimetype="application/json"
+        )
+        return response
+
+    elif resp.status_code == 404:
+        response = app.response_class(
+            response='{"type":"error", "data":"Unknown task id"}',
+            mimetype="application/json"
+        )
+        return response
 
     else:
-        flask.abort(500)
+        response = app.response_class(
+            response='{"type":"error", "data":"Internal server error"}',
+            mimetype="application/json"
+        )
+        return response
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5001, threaded=True)
+	app.run(host='0.0.0.0', port=5001, threaded=True)
