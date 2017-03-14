@@ -74,9 +74,8 @@ class ContourLinesGenerator(Process):
         Module('v.out.ogr', input='contour_lines', output='contour_lines', format='ESRI_Shapefile', type='line')
 
         shp_zip = zipfile.ZipFile('contour_lines.zip', 'w')
-        for root, dirs, files in os.walk('contour_lines'):
-           for file in files:
-               shp_zip.write(os.path.join(root, file))
+        for file in os.listdir('contour_lines'):
+            shp_zip.write(os.path.join('contour_lines', file), file)
         shp_zip.close()
         response.outputs['contour_lines'].file = 'contour_lines.zip'
 
