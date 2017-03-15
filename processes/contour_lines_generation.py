@@ -69,7 +69,8 @@ class ContourLinesGenerator(Process):
         Module('r.contour',
               input='elevation',
               output='contour_lines',
-              step=request.inputs['interval'][0].data
+              step=request.inputs['interval'][0].data,
+              cut=2
         )
         Module('v.out.ogr', input='contour_lines', output='contour_lines', format='ESRI_Shapefile', type='line')
 
