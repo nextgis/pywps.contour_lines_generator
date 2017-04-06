@@ -16,9 +16,10 @@ This is a app written using PyWPS 4.
 ## Running  
 ```python app.py```
 
-## Bags
+## Warnings\Bags
 1. Message: **"Maximum number of parallel running processes reached. Please try later."**  
 Sometimes it is not **True**!
 Pywps stores all requests (and it statuses) in sqlite logs db.
 Sometimes need to clean the database.
-If request process fail, pywps does not mark request as finished in db.
+If request process fail, pywps does not mark request as finished in db.  
+2. Calculation results are not automatically removed. **Disk space decreases!**.  
