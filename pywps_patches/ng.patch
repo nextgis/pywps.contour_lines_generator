@@ -1,0 +1,57 @@
+diff --git a/pywps/app/Process.py b/pywps/app/Process.py
+index b0e2835..2802ef7 100644
+--- a/pywps/app/Process.py
++++ b/pywps/app/Process.py
+@@ -170,7 +170,13 @@ class Process(object):
+         """
+ 
+         maxparallel = int(config.get_config_value('server', 'parallelprocesses'))
+-        running = dblog.get_running().count()
++        maxparallel_per_process = bool(config.get_config_value('server', 'parallelprocesses_per_process'))
++
++        if maxparallel_per_process:
++            running = dblog.get_running(self.identifier).count()
++        else:
++            running = dblog.get_running().count()
++
+         stored = dblog.get_stored().count()
+ 
+         # async
+@@ -362,8 +368,11 @@ class Process(object):
+             mapset_name = tempfile.mkdtemp(prefix='pywps_', dir=os.path.join(dbase, location))
+             shutil.copy(os.path.join(dbase, location, 'PERMANENT',
+                         'DEFAULT_WIND'), os.path.join(mapset_name, 'WIND'))
+-            shutil.copy(os.path.join(dbase, location, 'PERMANENT',
+-                        'PROJ_EPSG'), os.path.join(mapset_name, 'PROJ_EPSG'))
++            
++            if os.path.exists(os.path.join(dbase, location, 'PERMANENT',
++                        'PROJ_EPSG')):
++                shutil.copy(os.path.join(dbase, location, 'PERMANENT',
++                            'PROJ_EPSG'), os.path.join(mapset_name, 'PROJ_EPSG'))
+             shutil.copy(os.path.join(dbase, location, 'PERMANENT',
+                         'PROJ_INFO'), os.path.join(mapset_name, 'PROJ_INFO'))
+             shutil.copy(os.path.join(dbase, location, 'PERMANENT',
+diff --git a/pywps/dblog.py b/pywps/dblog.py
+index 175ec14..7f52130 100644
+--- a/pywps/dblog.py
++++ b/pywps/dblog.py
+@@ -79,7 +79,7 @@ def log_request(uuid, request):
+     # NoApplicableCode("Could commit to database: {}".format(e.message))
+ 
+ 
+-def get_running():
++def get_running(identifier=None):
+     """Returns running processes ids
+     """
+ 
+@@ -88,6 +88,10 @@ def get_running():
+         ProcessInstance.percent_done < 100).filter(
+             ProcessInstance.percent_done > -1)
+ 
++    if identifier is not None:
++        running = running.filter(
++            ProcessInstance.identifier == identifier)
++
+     session.close()
+     return running
+ 
