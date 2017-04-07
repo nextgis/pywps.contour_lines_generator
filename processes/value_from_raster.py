@@ -28,9 +28,12 @@ from pywps import Process, LiteralInput, BoundingBoxInput, LiteralOutput, Comple
 from pywps.validator.complexvalidator import validategml
 
 from pywps.validator.mode import MODE
+from pywps.app.WPSResponse import STATUS
+from pywps.exceptions import NoApplicableCode
 
 import pywps.configuration as config
 
+LOGGER = logging.getLogger("PYWPS")
 
 class ValueFromRaster(Process):
     def __init__(self, grass_location):
@@ -58,9 +61,31 @@ class ValueFromRaster(Process):
 
     def _handler(self, request, response):
         from grass.pygrass.modules import Module
+        
+        x = request.inputs['x'][0].data
+        y = request.inputs['y'][0].data
+
+        #r.what map=name coordinates=east,north
+        m =  Module('r.what',
+              map="elevation",
+              coordinates=[x, y],
+              output="result.txt",
+              flags="n"
+        )
+
+        identify_result = {}
+        with open("result.txt", 'r') as f:
+          headers = f.readline().strip().split('|')
+          LOGGER.warning("[ValueFromRaster] headers: " + str(headers))
+          values = f.readline().strip().split('|')
+          LOGGER.warning("[ValueFromRaster] values: " + str(values))
+
+        if len(values) == len(headers):
+          for i in range(len(headers)):
+            identify_result[headers[i]] = values[i]
           
-        # TODO calculate value
-        value = request.inputs['x'][0].data + request.inputs['y'][0].data
-        response.outputs['value'].data = value
+          value = identify_result.get("elevation",None)
+          if value is not None:
+            response.outputs['value'].data = value
 
         return response

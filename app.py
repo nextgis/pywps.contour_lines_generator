@@ -166,7 +166,8 @@ def contour_lines_check():
 
     ns = {
         "wps":"http://www.opengis.net/wps/1.0.0",
-        "xlink": "http://www.w3.org/1999/xlink"
+        "xlink": "http://www.w3.org/1999/xlink",
+        "ows": "http://www.opengis.net/ows/1.1",
     }
     if resp.status_code == requests.codes.ok:
         try:
@@ -225,6 +226,30 @@ def contour_lines_check():
                         mimetype="application/json"
                     )
                     return response
+
+            process_failed_tag = root.find("wps:Status/wps:ProcessFailed", ns)
+            if process_failed_tag is not None:
+# <wps:Status creationTime="2017-04-07T10:48:35Z">
+#     <wps:ProcessFailed>
+#         <wps:ExceptionReport>
+#             <ows:Exception exceptionCode="NoApplicableCode" locater="None">
+#                 <ows:ExceptionText>Process error: value_from_raster.py._handler Line 86 No value!</ows:ExceptionText>
+#             </ows:Exception>
+#         </wps:ExceptionReport>
+#     </wps:ProcessFailed>
+# </wps:Status>
+                err_msg = root.find("wps:Status/wps:ProcessFailed/wps:ExceptionReport/ows:Exception/ows:ExceptionText", ns)
+                if err_msg is None:
+                    err_msg = "Unknown error"
+                else:
+                    err_msg = err_msg.text
+
+                response = app.response_class(
+                    response='{"type":"error", "data":"%s"}' % err_msg,
+                    mimetype="application/json"
+                )
+                return response
+
         except Exception as e:
             response = app.response_class(
                 response='{"type":"error", "data":"%s"}' % unicode(e),

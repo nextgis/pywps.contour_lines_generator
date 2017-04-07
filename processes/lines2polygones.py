@@ -67,15 +67,62 @@ class Lines2Polygones(Process):
 
         Module('v.in.ogr',
               input=request.inputs["geojson_lines"][0].file,
-              output="lines"
+              output="lines",
+              flags=["t"],
         )
         Module('v.in.ogr',
               input=request.inputs["geojson_points"][0].file,
-              output="points"
+              output="points",
         )
 
         # TODO generate layer 'polygones'
-        Module('v.out.ogr', input='lines', output='polygones', format='ESRI_Shapefile')
+        # Module('v.out.ogr', input='lines', output='polygones', format='ESRI_Shapefile')
+        # v.clean in=test out=test_clean -c tool=snap,break,rmsa,break,rmdupl,rmline,rmdangle threshold=0,0,0,0,1,0,10 --o
+        Module('v.clean',
+              input="lines",
+              output="lines_clean",
+              tool=["snap","break","rmsa","break","rmdupl","rmline","rmdangle"],
+              threshold=[0,0,0,0,1,0,10],
+              overwrite=True,
+              flags=["c"],
+        )
+        # v.type input=test_clean output=test_clean1 from_type=line to_type=boundary --o
+        Module('v.type',
+              input="lines_clean",
+              output="test_clean1",
+              from_type="line",
+              to_type="boundary",
+              overwrite=True,
+        )
+        
+        # v.patch in=point_map,test_clean1 out=test_clean2 --o
+        Module('v.patch',
+              input=["points","test_clean1"],
+              output="test_clean2",
+              overwrite=True,
+        )
+        # v.type test_clean2 out=test_clean3 from=point to=centroid --o
+        Module('v.type',
+              input="test_clean2",
+              output="test_clean3",
+              from_type="point",
+              to_type="centroid",
+              overwrite=True,
+        )
+
+        # v.db.connect test_clean3 table=point_map
+        Module('v.db.connect',
+              map="test_clean3",
+              table="points",
+        )
+
+        # v.out.ogr test_clean2 out=test_clean2 type=area --o
+        Module('v.out.ogr',
+              input="test_clean3",
+              output="polygones",
+              type="area",
+              overwrite=True,
+        )
 
         shp_zip = zipfile.ZipFile('polygones.zip', 'w')
         for file in os.listdir('polygones'):
