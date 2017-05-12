@@ -295,6 +295,7 @@ def contour_lines_check():
 def lines2polygones_book():
     lines_geojson = request.args.get("lines", "")
     points_geojson = request.args.get("points", "")
+    year = request.args.get("year", "")
 
     xml = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <wps:Execute service="WPS" version="1.0.0" xmlns:wps="http://www.opengis.net/wps/1.0.0" xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wps/1.0.0 ../wpsExecute_request.xsd">
@@ -310,6 +311,13 @@ def lines2polygones_book():
             <ows:Title>GEOJSON Points</ows:Title>
             <wps:Reference xlink:href="%s"/>
         </wps:Input>
+        <wps:Input>
+            <ows:Identifier>year</ows:Identifier>
+            <ows:Title>Year</ows:Title>
+            <wps:Data>
+                <wps:LiteralData>%s</wps:LiteralData>
+            </wps:Data>
+        </wps:Input>
     </wps:DataInputs>
     <wps:ResponseForm>
        <wps:ResponseDocument status="true" storeExecuteResponse="true">
@@ -319,7 +327,7 @@ def lines2polygones_book():
        </wps:ResponseDocument>
     </wps:ResponseForm>
 </wps:Execute>
-""" % (lines_geojson, points_geojson)
+""" % (lines_geojson, points_geojson, year)
 
     return make_wps_request(xml)
 

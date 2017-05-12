@@ -38,6 +38,7 @@ class Lines2Polygones(Process):
         inputs = [
                   ComplexInput('geojson_lines', 'GEOJSON Lines', supported_formats=[Format(FORMATS.GEOJSON.mime_type)]),
                   ComplexInput('geojson_points', 'GEOJSON Points', supported_formats=[Format(FORMATS.GEOJSON.mime_type)]),
+                  LiteralInput('year', "Year")
                  ]
         outputs = [
                   ComplexOutput('polygones', 'Polygones', supported_formats=[Format(FORMATS.SHP.mime_type)])
@@ -65,14 +66,32 @@ class Lines2Polygones(Process):
         # print dir(request.inputs["geojson_lines"][0])
         # print request.inputs["geojson_lines"][0].file
 
+        os.environ["SHAPE_ENCODING"] = "UTF8"
+
+        year = int(request.inputs['year'][0].data)
+
         Module('v.in.ogr',
               input=request.inputs["geojson_lines"][0].file,
-              output="lines",
-              flags=["t"],
+              output="lines_orign",
+              encoding="UTF8"
         )
         Module('v.in.ogr',
               input=request.inputs["geojson_points"][0].file,
+              output="points_orign",
+              encoding="UTF8"
+        )
+
+        condition = "date(UpperDat)>date('%d-01-01') and date(LwDate)<date('%d-01-01')" % (year, year)
+        Module('v.extract',
+              input="lines_orign",
+              flags=["t"],
+              output="lines",
+              where=condition
+        )
+        Module('v.extract',
+              input="points_orign",
               output="points",
+              where=condition
         )
 
         # TODO generate layer 'polygones'
