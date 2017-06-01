@@ -24,9 +24,10 @@ import os
 import zipfile
 import logging
 
-from pywps import Process, LiteralInput, BoundingBoxInput, LiteralOutput, ComplexInput, ComplexOutput, Format, FORMATS, UOM
-from pywps.validator.complexvalidator import validategml
+from subprocess import PIPE
 
+from pywps import Process, LiteralInput, BoundingBoxInput, LiteralOutput, ComplexInput, ComplexOutput, Format, FORMATS, UOM, LOGGER
+from pywps.validator.complexvalidator import validategml
 from pywps.validator.mode import MODE
 
 import pywps.configuration as config
@@ -60,19 +61,34 @@ class ContourLinesGenerator(Process):
     def _handler(self, request, response):
         from grass.pygrass.modules import Module
         
-        Module('g.region',
-              n=request.inputs['bboxin'][0].data[3],
-              s=request.inputs['bboxin'][0].data[1],
-              e=request.inputs['bboxin'][0].data[2],
-              w=request.inputs['bboxin'][0].data[0]
+        # with open(os.path.join(self.workdir, self.uuid + ".log"), "w") as log_file:
+        LOGGER.info(str(self.uuid) + " ContourLinesGenerator START")
+        Module('g.region'
+              ,n=request.inputs['bboxin'][0].data[3]
+              ,s=request.inputs['bboxin'][0].data[1]
+              ,e=request.inputs['bboxin'][0].data[2]
+              ,w=request.inputs['bboxin'][0].data[0]
+              ,stdout_=PIPE
+              ,stderr_=PIPE
         )
-        Module('r.contour',
-              input='elevation',
-              output='contour_lines',
-              step=request.inputs['interval'][0].data,
-              cut=2
+
+        Module('r.contour'
+              ,input='elevation'
+              ,output='contour_lines'
+              ,step=request.inputs['interval'][0].data
+              ,cut=2
+              ,stdout_=PIPE
+              ,stderr_=PIPE
         )
-        Module('v.out.ogr', input='contour_lines', output='contour_lines', format='ESRI_Shapefile', type='line')
+
+        Module('v.out.ogr'
+              ,input='contour_lines'
+              ,output='contour_lines'
+              ,format='ESRI_Shapefile'
+              ,type='line'
+              ,stdout_=PIPE
+              ,stderr_=PIPE
+        )
 
         shp_zip = zipfile.ZipFile('contour_lines.zip', 'w')
         for file in os.listdir('contour_lines'):

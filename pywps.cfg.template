@@ -36,6 +36,7 @@ parallelprocesses=1
 ;level=DEBUG
 level=INFO
 file=logs/pywps.log
+format=%(asctime)s %(levelname)s %(message)s
 database=sqlite://///full/path/to/logs/pywps-logs.sqlite3
 
 

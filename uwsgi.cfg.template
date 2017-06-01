@@ -1,13 +1,11 @@
 [uwsgi]
-socket = 0.0.0.0:5001
-
+socket = 0.0.0.0:5002
+chdir = /pass/to/workdir
 master = true
 processes = 1
-die-on-term = true
-memory-report = true
+thread = 1
+wsgi-file = /pass/to/avral_wsgi.py
+virtualenv = /pass/to/venv
+buffer-size = 32768
 
-module = pywps_app:application
-virtualenv = /path/to/pywps-env
-buffer-size=32768
-
-static-map = /wps/outputs=/path/to/pywps/outputs
+stats = 127.0.0.1:9191

@@ -25,10 +25,13 @@ import zipfile
 import logging
 import time
 
-from pywps import Process, LiteralInput, BoundingBoxInput, LiteralOutput, ComplexInput, ComplexOutput, Format, FORMATS, UOM
-from pywps.validator.complexvalidator import validategml
+from subprocess import PIPE
 
+from pywps import Process, LiteralInput, BoundingBoxInput, LiteralOutput, ComplexInput, ComplexOutput, Format, FORMATS, UOM, LOGGER
+from pywps.app.WPSResponse import STATUS
+from pywps.validator.complexvalidator import validategml
 from pywps.validator.mode import MODE
+from pywps.configuration import get_config_value
 
 import pywps.configuration as config
 
@@ -58,6 +61,22 @@ class Lines2Polygones(Process):
             grass_location="epsg:3857"
         )
 
+    def __saveVectorTo(self, grass_layer_name, save_to_dir = None):
+        if save_to_dir is None:
+          log_file = get_config_value("logging", "file")
+          save_to_dir = os.path.dirname(log_file)
+
+        from grass.pygrass.modules import Module
+
+        if not os.path.exists(save_to_dir):
+          os.mkdir(save_to_dir)
+
+        Module('v.out.ogr',
+              input=grass_layer_name,
+              output=os.path.join(save_to_dir, grass_layer_name),
+              overwrite=True,
+        )
+
     def _handler(self, request, response):
         from grass.pygrass.modules import Module
         
@@ -81,7 +100,29 @@ class Lines2Polygones(Process):
               encoding="UTF8"
         )
 
-        condition = "date(UpperDat)>date('%d-01-01') and date(LwDate)<date('%d-01-01')" % (year, year)
+        condition = "date(UpperDat)>=date('%04d-01-01') and date(LwDate)<=date('%04d-01-01')" % (year, year)
+
+        for layer in ["lines_orign", "points_orign"]:
+          sql = "select count(*) as 'count' from %s where %s" % (layer, condition)
+          select = Module('db.select',
+                sql=sql,
+                run_=False,
+                stdout_=PIPE,
+                stderr_=PIPE,
+          )
+          select.run()
+          if select.popen.returncode == 0:
+            selected_count = int(select.outputs["stdout"].value.splitlines()[1])
+            if selected_count == 0:
+              raise Exception("There are no any feature for year %d in %s layer" %(year, layer))
+              # response.update_status(
+              #   "There are no any feature for year %d in %s layer" %(year, layer),
+              #   0,
+              #   STATUS.ERROR_STATUS,
+              #   True
+              # )
+              # return response
+        
         Module('v.extract',
               input="lines_orign",
               flags=["t"],
@@ -93,6 +134,10 @@ class Lines2Polygones(Process):
               output="points",
               where=condition
         )
+
+        # ... debug ...
+        # self.__saveVectorTo("lines")
+        # self.__saveVectorTo("points")
 
         # TODO generate layer 'polygones'
         # Module('v.out.ogr', input='lines', output='polygones', format='ESRI_Shapefile')
