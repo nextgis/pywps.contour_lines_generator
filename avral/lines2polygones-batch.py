@@ -13,8 +13,8 @@ import urllib2
 import subprocess
 
 webgis = 'histgeo'
-lines_id = '609'
-points_id = '607'
+lines_id = '642'
+points_id = '1815'
 
 
 url_template = "http://213.248.47.89/api/resource/%s/geojson"
@@ -24,7 +24,7 @@ points_json_url = url_template % points_id
 
 print "Download lines START"
 #urllib.urlretrieve(lines_json_url, "lines.geojson")
-request = urllib2.urlopen(lines_json_url, timeout=500)
+request = urllib2.urlopen(lines_json_url, timeout=700)
 with open("lines.geojson", 'wb') as f:
     try:
         f.write(request.read())
@@ -43,7 +43,7 @@ with open('lines.csv', 'rb') as csvfile:
     reader.next()
     for row in reader:
         for val in row:
-            if int(val[:4]) >= 1462:
+            if int(val[:4]) >= 1300:
                 years.add(int(val[:4]))
 years = list(years)
 years.sort()
