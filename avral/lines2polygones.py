@@ -100,7 +100,7 @@ class Lines2Polygones(Process):
               encoding="UTF8"
         )
 
-        condition = "date(UpperDat)>=date('%04d-01-01') and date(LwDate)<=date('%04d-01-01')" % (year, year)
+        condition = "cast(strftime('%%Y', date(UpperDat)) as integer) >= %04d AND cast(strftime('%%Y', date(LwDate)) as integer) <= %04d" % (year, year)
 
         for layer in ["lines_orign", "points_orign"]:
           sql = "select count(*) as 'count' from %s where %s" % (layer, condition)
